@@ -1,9 +1,6 @@
 import type { Config } from "tailwindcss";
 import { nextui } from "@nextui-org/react";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-// const { nextui } = require("@nextui-org/react");
-
 export default {
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
