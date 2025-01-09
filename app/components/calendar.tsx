@@ -127,6 +127,10 @@ const Calendar = () => {
       calendarApi
         .getEventById(currentEvent.id)
         ?.setProp("title", currentEvent.title);
+
+      calendarApi
+        .getEventById(currentEvent.id)
+        ?.setExtendedProp("content", currentEvent.extendedProps.content);
       onClose();
     }
   };
