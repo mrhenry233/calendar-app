@@ -21,6 +21,7 @@ import {
 } from "@nextui-org/react";
 import { MockEvents } from "../common/mock-data";
 import { Event } from "../common/types";
+import DeleteConfirmation from "./modals/delete-confirmation";
 
 const BlankEvent: Event = {
   id: "",
@@ -49,6 +50,8 @@ const Calendar = () => {
   );
 
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const [isShowDeleteConfirmation, setIsShowDeleteConfirmation] =
+    useState<boolean>(false);
 
   useEffect(() => {
     if (!isOpen) setCurrentEventForm(BlankEvent);
@@ -259,79 +262,90 @@ const Calendar = () => {
       </div>
 
       {/* event modal */}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-        <ModalContent>
-          {() => (
-            <div>
-              <ModalHeader>
-                {currentEventForm.id ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรม"}
-              </ModalHeader>
-              <ModalBody>
-                <form
-                  className="flex flex-col gap-y-4"
-                  onSubmit={handleAddEvent}
-                >
-                  <div>
-                    <p>ชื่อ Event</p>
-                    <input
-                      type="text"
-                      value={currentEventForm.title}
-                      onChange={(e) =>
-                        setCurrentEventForm({
-                          ...currentEventForm,
-                          title: e.target.value,
-                        })
-                      }
-                      required
-                      className="border border-gray-200 p-3 rounded-md text-base w-full mt-2"
-                    />
-                  </div>
-                  <div>
-                    <p>เนื้อหา Event</p>
-                    <input
-                      type="text"
-                      value={currentEventForm.extendedProps.content}
-                      onChange={(e) => {
-                        setCurrentEventForm({
-                          ...currentEventForm,
-                          extendedProps: {
-                            ...currentEventForm.extendedProps,
-                            content: e.target.value,
-                          },
-                        });
-                      }}
-                      required
-                      className="border border-gray-200 p-3 rounded-md text-base w-full mt-2"
-                    />
-                  </div>
-                </form>
-              </ModalBody>
-              <ModalFooter className="flex justify-end gap-x-6">
-                <button
-                  className="bg-blue-500 text-white p-3 mt-5 rounded-md min-w-[100px]"
-                  disabled={
-                    currentEventForm.title.length === 0 &&
-                    currentEventForm.extendedProps.content.length === 0
-                  }
-                  onClick={() =>
-                    currentEventForm.id ? handleEditEvent() : handleAddEvent()
-                  }
-                >
-                  {currentEventForm.id ? "บันทึก" : "เพิ่มกิจกรรม"}
-                </button>
-                {currentEventForm.id && (
-                  <button
-                    className="bg-white text-red-500 p-3 mt-5 rounded-md border border-red-500 min-w-[100px]"
-                    onClick={handleDeleteEvent}
+      <>
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+          <ModalContent>
+            {() => (
+              <div>
+                <ModalHeader>
+                  {currentEventForm.id ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรม"}
+                </ModalHeader>
+                <ModalBody>
+                  <form
+                    className="flex flex-col gap-y-4"
+                    onSubmit={handleAddEvent}
                   >
-                    ลบ
+                    <div>
+                      <p>ชื่อ Event</p>
+                      <input
+                        type="text"
+                        value={currentEventForm.title}
+                        onChange={(e) =>
+                          setCurrentEventForm({
+                            ...currentEventForm,
+                            title: e.target.value,
+                          })
+                        }
+                        required
+                        className="border border-gray-200 p-3 rounded-md text-base w-full mt-2"
+                      />
+                    </div>
+                    <div>
+                      <p>เนื้อหา Event</p>
+                      <input
+                        type="text"
+                        value={currentEventForm.extendedProps.content}
+                        onChange={(e) => {
+                          setCurrentEventForm({
+                            ...currentEventForm,
+                            extendedProps: {
+                              ...currentEventForm.extendedProps,
+                              content: e.target.value,
+                            },
+                          });
+                        }}
+                        required
+                        className="border border-gray-200 p-3 rounded-md text-base w-full mt-2"
+                      />
+                    </div>
+                  </form>
+                </ModalBody>
+                <ModalFooter className="flex justify-end gap-x-6">
+                  <button
+                    className="bg-blue-500 text-white p-3 mt-5 rounded-md min-w-[100px]"
+                    disabled={
+                      currentEventForm.title.length === 0 &&
+                      currentEventForm.extendedProps.content.length === 0
+                    }
+                    onClick={() =>
+                      currentEventForm.id ? handleEditEvent() : handleAddEvent()
+                    }
+                  >
+                    {currentEventForm.id ? "บันทึก" : "เพิ่มกิจกรรม"}
                   </button>
-                )}
-              </ModalFooter>
-            </div>
-          )}
-        </ModalContent>
-      </Modal>
+                  {currentEventForm.id && (
+                    <button
+                      className="bg-white text-red-500 p-3 mt-5 rounded-md border border-red-500 min-w-[100px]"
+                      onClick={() => setIsShowDeleteConfirmation(true)}
+                    >
+                      ลบ
+                    </button>
+                  )}
+                </ModalFooter>
+              </div>
+            )}
+          </ModalContent>
+        </Modal>
+
+        <DeleteConfirmation
+          isOpen={isShowDeleteConfirmation}
+          onConfirm={() => {
+            handleDeleteEvent();
+            setIsShowDeleteConfirmation(false);
+          }}
+          onCancel={() => setIsShowDeleteConfirmation(false)}
+        />
+      </>
     </div>
   );
 };
