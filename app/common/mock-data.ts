@@ -55,7 +55,6 @@ export const MockEvents: Event[] = [
       created_by: "User1",
       created_at: new Date("2025-01-09T12:00:00.000Z").toISOString(),
       updated_at: new Date("2025-01-09T12:00:00.000Z").toISOString(),
-      selected_date: undefined,
     },
   },
   {
@@ -69,7 +68,6 @@ export const MockEvents: Event[] = [
       created_by: "User2",
       created_at: new Date("2025-01-09T12:00:00.000Z").toISOString(),
       updated_at: new Date("2025-01-09T12:00:00.000Z").toISOString(),
-      selected_date: undefined,
     },
   },
   {
@@ -83,7 +81,6 @@ export const MockEvents: Event[] = [
       created_by: "User3",
       created_at: new Date("2025-01-09T12:00:00.000Z").toISOString(),
       updated_at: new Date("2025-01-09T12:00:00.000Z").toISOString(),
-      selected_date: undefined,
     },
   },
   {
@@ -97,7 +94,6 @@ export const MockEvents: Event[] = [
       created_by: "User4",
       created_at: new Date("2025-01-09T12:00:00.000Z").toISOString(),
       updated_at: new Date("2025-01-09T12:00:00.000Z").toISOString(),
-      selected_date: undefined,
     },
   },
 ];

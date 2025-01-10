@@ -8,8 +8,8 @@ import interactionGridPlugin from "@fullcalendar/interaction";
 import {
   CalendarApi,
   DateSelectArg,
-  EventApi,
   EventClickArg,
+  EventDropArg,
 } from "@fullcalendar/core/index.js";
 import {
   Modal,
@@ -22,6 +22,7 @@ import {
 import { MockEvents } from "../common/mock-data";
 import { Event } from "../common/types";
 import DeleteConfirmation from "./modals/delete-confirmation";
+import dayjs from "dayjs";
 
 const BlankEvent: Event = {
   id: "",
@@ -34,7 +35,6 @@ const BlankEvent: Event = {
     created_by: "henry",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    selected_date: undefined,
   },
 };
 
@@ -42,7 +42,7 @@ const Calendar = () => {
   let calendarRef: FullCalendar | null = null;
   let clickTimeout: NodeJS.Timeout | null = null;
 
-  const [allEvents, setAllEvents] = useState<EventApi[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>(MockEvents);
   const [currentEventForm, setCurrentEventForm] = useState<Event>(BlankEvent);
   const [selectedDate, setSelectedDate] = useState<DateSelectArg | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg | null>(
@@ -88,7 +88,6 @@ const Calendar = () => {
         created_by: event.extendedProps.created_by,
         created_at: event.extendedProps.created_at,
         updated_at: event.extendedProps.updated_at,
-        selected_date: event.extendedProps.selected_date,
       },
     });
   };
@@ -109,7 +108,6 @@ const Calendar = () => {
           created_by: currentEventForm.extendedProps.created_by,
           created_at: currentEventForm.extendedProps.created_at,
           updated_at: currentEventForm.extendedProps.updated_at,
-          selected_date: selectedDate,
         },
       };
       calendarApi.addEvent(_event);
@@ -131,21 +129,6 @@ const Calendar = () => {
 
       onClose();
     }
-
-    // if (currentEvent.extendedProps.selected_date) {
-    //   const calendarApi: CalendarApi =
-    //     currentEvent.extendedProps.selected_date.view.calendar;
-    //   calendarApi.unselect();
-
-    //   calendarApi
-    //     .getEventById(currentEvent.id)
-    //     ?.setProp("title", currentEvent.title);
-
-    //   calendarApi
-    //     .getEventById(currentEvent.id)
-    //     ?.setExtendedProp("content", currentEvent.extendedProps.content);
-    //   onClose();
-    // }
   };
 
   const handleDeleteEvent = () => {
@@ -155,9 +138,24 @@ const Calendar = () => {
     }
   };
 
-  // this will save all events, full calendar's things
-  const handleSetEvents = (events: EventApi[]) => {
-    setAllEvents(events);
+  const handleDropEvent = (arg: EventDropArg) => {
+    setAllEvents(
+      allEvents.map((event) => {
+        if (event.id === arg.event.id) {
+          const { start } = arg.event;
+          const newData = {
+            ...event,
+            start: dayjs(start).toISOString(),
+            end: event.allDay
+              ? dayjs(start).add(1, "day").toISOString()
+              : dayjs(event.end).add(1, "day").toISOString(),
+          };
+          return newData;
+        }
+
+        return event;
+      })
+    );
   };
 
   return (
@@ -167,22 +165,23 @@ const Calendar = () => {
         <div className="w-3/12">
           <span className="text-2xl">กิจกรรม</span>
           {allEvents.length > 0 ? (
-            <div className="">
-              <ul>
-                {allEvents
-                  .sort(
-                    (a, b) =>
-                      new Date(a.start as Date).getTime() -
-                      new Date(b.start as Date).getTime()
-                  )
-                  .map((event: EventApi) => (
-                    <li key={event.id}>
-                      <span>
-                        {event.start?.toLocaleDateString()} {event.title}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
+            <div className="mt-6">
+              {allEvents
+                .sort(
+                  (a, b) =>
+                    new Date(a.start).getTime() - new Date(b.start).getTime()
+                )
+                .map((event) => (
+                  <div key={event.id} className="w-full flex flex-col mb-6">
+                    <p className="font-light text-small text-gray-600">
+                      {dayjs(event.start).format("dddd D, MMM")}
+                    </p>
+                    <div className="">
+                      <p className="text-lg font-semibold">{event.title}</p>
+                      <p>{event.extendedProps.content}</p>
+                    </div>
+                  </div>
+                ))}
             </div>
           ) : (
             <div className="text-gray-500 italic">ไม่มีกิจกรรม</div>
@@ -247,8 +246,8 @@ const Calendar = () => {
             dayMaxEvents
             select={(date: DateSelectArg) => handleClickDate(date)}
             locale="th"
-            events={MockEvents}
-            eventsSet={(events) => handleSetEvents(events)}
+            events={allEvents}
+            eventDrop={(arg) => handleDropEvent(arg)}
             eventClick={(event: EventClickArg) => {
               handleClickEvent(event);
             }}

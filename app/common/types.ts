@@ -1,4 +1,3 @@
-import { DateSelectArg } from "@fullcalendar/core/index.js";
 import { Sex } from "./enums";
 
 export type ExtendedPropsAppointment = {
@@ -34,7 +33,5 @@ export type Event = {
     created_by: string;
     created_at: string;
     updated_at: string;
-
-    selected_date: DateSelectArg | undefined;
   };
 };
