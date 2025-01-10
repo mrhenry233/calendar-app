@@ -42,7 +42,7 @@ const Calendar = () => {
   let clickTimeout: NodeJS.Timeout | null = null;
 
   const [allEvents, setAllEvents] = useState<EventApi[]>([]);
-  const [currentEvent, setCurrentEvent] = useState<Event>(BlankEvent);
+  const [currentEventForm, setCurrentEventForm] = useState<Event>(BlankEvent);
   const [selectedDate, setSelectedDate] = useState<DateSelectArg | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg | null>(
     null
@@ -51,7 +51,7 @@ const Calendar = () => {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   useEffect(() => {
-    if (!isOpen) setCurrentEvent(BlankEvent);
+    if (!isOpen) setCurrentEventForm(BlankEvent);
   }, [isOpen]);
 
   const handleClickDate = (date: DateSelectArg) => {
@@ -74,7 +74,7 @@ const Calendar = () => {
     setSelectedEvent(_event);
     onOpen();
     const { event } = _event;
-    setCurrentEvent({
+    setCurrentEventForm({
       id: event.id,
       title: event.title,
       start: event.start?.toISOString() as string,
@@ -88,10 +88,6 @@ const Calendar = () => {
         selected_date: event.extendedProps.selected_date,
       },
     });
-
-    // selected to remove or do something here
-    // if wanna remove event
-    // _event.event.remove();
   };
 
   const handleAddEvent = () => {
@@ -101,15 +97,15 @@ const Calendar = () => {
       // create new event
       const _event: Event = {
         id: (allEvents.length + 1).toString(),
-        title: currentEvent.title,
+        title: currentEventForm.title,
         start: selectedDate.start.toISOString(),
         end: selectedDate.start.toISOString(),
-        allDay: currentEvent.allDay,
+        allDay: currentEventForm.allDay,
         extendedProps: {
-          content: currentEvent.extendedProps.content,
-          created_by: currentEvent.extendedProps.created_by,
-          created_at: currentEvent.extendedProps.created_at,
-          updated_at: currentEvent.extendedProps.updated_at,
+          content: currentEventForm.extendedProps.content,
+          created_by: currentEventForm.extendedProps.created_by,
+          created_at: currentEventForm.extendedProps.created_at,
+          updated_at: currentEventForm.extendedProps.updated_at,
           selected_date: selectedDate,
         },
       };
@@ -119,25 +115,41 @@ const Calendar = () => {
   };
 
   const handleEditEvent = () => {
-    if (currentEvent.extendedProps.selected_date) {
-      const calendarApi: CalendarApi =
-        currentEvent.extendedProps.selected_date.view.calendar;
-      calendarApi.unselect();
+    if (selectedEvent) {
+      const calendarApi: CalendarApi = selectedEvent.view.calendar;
+      const eventId = calendarApi.getEventById(currentEventForm.id);
+      if (eventId) {
+        eventId.setProp("title", currentEventForm.title);
+        eventId.setExtendedProp(
+          "content",
+          currentEventForm.extendedProps.content
+        );
+      }
 
-      calendarApi
-        .getEventById(currentEvent.id)
-        ?.setProp("title", currentEvent.title);
-
-      calendarApi
-        .getEventById(currentEvent.id)
-        ?.setExtendedProp("content", currentEvent.extendedProps.content);
       onClose();
     }
+
+    // if (currentEvent.extendedProps.selected_date) {
+    //   const calendarApi: CalendarApi =
+    //     currentEvent.extendedProps.selected_date.view.calendar;
+    //   calendarApi.unselect();
+
+    //   calendarApi
+    //     .getEventById(currentEvent.id)
+    //     ?.setProp("title", currentEvent.title);
+
+    //   calendarApi
+    //     .getEventById(currentEvent.id)
+    //     ?.setExtendedProp("content", currentEvent.extendedProps.content);
+    //   onClose();
+    // }
   };
 
   const handleDeleteEvent = () => {
-    selectedEvent?.event.remove();
-    onClose();
+    if (selectedEvent) {
+      selectedEvent.event.remove();
+      onClose();
+    }
   };
 
   // this will save all events, full calendar's things
@@ -252,7 +264,7 @@ const Calendar = () => {
           {() => (
             <div>
               <ModalHeader>
-                {currentEvent.id ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรม"}
+                {currentEventForm.id ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรม"}
               </ModalHeader>
               <ModalBody>
                 <form
@@ -263,10 +275,10 @@ const Calendar = () => {
                     <p>ชื่อ Event</p>
                     <input
                       type="text"
-                      value={currentEvent.title}
+                      value={currentEventForm.title}
                       onChange={(e) =>
-                        setCurrentEvent({
-                          ...currentEvent,
+                        setCurrentEventForm({
+                          ...currentEventForm,
                           title: e.target.value,
                         })
                       }
@@ -278,12 +290,12 @@ const Calendar = () => {
                     <p>เนื้อหา Event</p>
                     <input
                       type="text"
-                      value={currentEvent.extendedProps.content}
+                      value={currentEventForm.extendedProps.content}
                       onChange={(e) => {
-                        setCurrentEvent({
-                          ...currentEvent,
+                        setCurrentEventForm({
+                          ...currentEventForm,
                           extendedProps: {
-                            ...currentEvent.extendedProps,
+                            ...currentEventForm.extendedProps,
                             content: e.target.value,
                           },
                         });
@@ -298,16 +310,16 @@ const Calendar = () => {
                 <button
                   className="bg-blue-500 text-white p-3 mt-5 rounded-md min-w-[100px]"
                   disabled={
-                    currentEvent.title.length === 0 &&
-                    currentEvent.extendedProps.content.length === 0
+                    currentEventForm.title.length === 0 &&
+                    currentEventForm.extendedProps.content.length === 0
                   }
                   onClick={() =>
-                    currentEvent.id ? handleEditEvent() : handleAddEvent()
+                    currentEventForm.id ? handleEditEvent() : handleAddEvent()
                   }
                 >
-                  {currentEvent.id ? "บันทึก" : "เพิ่มกิจกรรม"}
+                  {currentEventForm.id ? "บันทึก" : "เพิ่มกิจกรรม"}
                 </button>
-                {currentEvent.id && (
+                {currentEventForm.id && (
                   <button
                     className="bg-white text-red-500 p-3 mt-5 rounded-md border border-red-500 min-w-[100px]"
                     onClick={handleDeleteEvent}
