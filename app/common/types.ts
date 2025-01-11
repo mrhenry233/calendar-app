@@ -35,3 +35,8 @@ export type Event = {
     updated_at: string;
   };
 };
+
+export type EventTimeForm = {
+  start: { hour: number; minute: number };
+  end: { hour: number; minute: number };
+};

@@ -12,6 +12,7 @@ import {
   EventDropArg,
 } from "@fullcalendar/core/index.js";
 import {
+  Checkbox,
   Input,
   Modal,
   ModalBody,
@@ -22,7 +23,7 @@ import {
   TimeInput,
   useDisclosure,
 } from "@nextui-org/react";
-import { Event } from "../common/types";
+import { Event, EventTimeForm } from "../common/types";
 import DeleteConfirmation from "./modals/delete-confirmation";
 import dayjs from "dayjs";
 import { inputClassNames } from "../common/class-names";
@@ -51,6 +52,10 @@ const Calendar = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg | null>(
     null
   );
+  const [eventTimeForm, setEventTimeForm] = useState<EventTimeForm>({
+    start: { hour: 9, minute: 0 },
+    end: { hour: 9, minute: 30 },
+  });
 
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [isShowDeleteConfirmation, setIsShowDeleteConfirmation] =
@@ -97,11 +102,28 @@ const Calendar = () => {
 
   const handleAddEvent = () => {
     if (selectedDate) {
+      const { start, end } = selectedDate;
+
+      console.log(selectedDate);
+
+      const isoStringStart = dayjs(start)
+        .hour(eventTimeForm.start.hour)
+        .minute(eventTimeForm.start.minute)
+        .second(0)
+        .millisecond(0)
+        .toISOString();
+      const isoStringEnd = dayjs(end)
+        .hour(eventTimeForm.end.hour)
+        .minute(eventTimeForm.end.minute)
+        .second(0)
+        .millisecond(0)
+        .toISOString();
+
       const _event: Event = {
         id: (allEvents.length + 1).toString(),
         title: currentEventForm.title,
-        start: selectedDate.start.toISOString(),
-        end: selectedDate.start.toISOString(),
+        start: isoStringStart,
+        end: isoStringEnd,
         allDay: currentEventForm.allDay,
         extendedProps: {
           content: currentEventForm.extendedProps.content,
@@ -110,6 +132,7 @@ const Calendar = () => {
           updated_at: currentEventForm.extendedProps.updated_at,
         },
       };
+      console.log(_event);
       setAllEvents((prev) => [...prev, _event]);
       onClose();
     }
@@ -196,6 +219,9 @@ const Calendar = () => {
                     <p className="font-light text-small text-gray-600">
                       {dayjs(event.start).format("dddd D, MMM")}
                     </p>
+                    <p className="font-light text-xs text-gray-600">
+                      {dayjs(event.start).format("hh:mm")}
+                    </p>
                     <div className="">
                       <p className="text-lg font-semibold">{event.title}</p>
                       <p>{event.extendedProps.content}</p>
@@ -260,6 +286,7 @@ const Calendar = () => {
               },
             }}
             initialView="dayGridMonth"
+            defaultAllDay={currentEventForm.allDay || false}
             editable
             selectable
             selectMirror
@@ -291,7 +318,22 @@ const Calendar = () => {
             {() => (
               <div className="w-full">
                 <ModalHeader className="w-full">
-                  {currentEventForm.id ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรม"}
+                  {/* <p>{currentEventForm.id ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรม"}</p> */}
+                  {selectedDate && (
+                    <div className="flex gap-x-1">
+                      <p>
+                        วัน
+                        {dayjs(new Date(selectedDate.start)).format(
+                          "ddd D MMMM"
+                        )}
+                      </p>
+                      <p>
+                        {dayjs(new Date(selectedDate.start))
+                          .add(543, "year")
+                          .format("YYYY")}
+                      </p>
+                    </div>
+                  )}
                 </ModalHeader>
                 <ModalBody className="w-full">
                   <form
@@ -334,34 +376,93 @@ const Calendar = () => {
                         }}
                       />
                     </div>
-                    <div className="w-full flex gap-x-2">
-                      <div className="w-full">
-                        <p className="mb-2">เวลาเริ่มต้น</p>
-                        <TimeInput
-                          defaultValue={new Time(9, 0)}
-                          label={null}
-                          aria-label="เวลาเริ่มต้น"
-                          // className="custom-time-input"
-                          hourCycle={24}
-                          classNames={{
-                            ...inputClassNames,
-                          }}
-                        />
-                      </div>
-                      <div className="w-full">
-                        <p className="mb-2">เวลาสิ้นสุด</p>
-                        <TimeInput
-                          defaultValue={new Time(9, 0)}
-                          label={null}
-                          aria-label="เวลาสิ้นสุด"
-                          // className="custom-time-input"
-                          hourCycle={24}
-                          classNames={{
-                            ...inputClassNames,
-                          }}
-                        />
-                      </div>
+                    <div>
+                      <p className="mb-1 mt-2 text-sm text-gray-500">
+                        ระยะเวลากิจกรรม
+                      </p>
+                      <Checkbox
+                        defaultChecked={currentEventForm.allDay}
+                        checked={currentEventForm.allDay}
+                        onChange={(e) =>
+                          setCurrentEventForm({
+                            ...currentEventForm,
+                            allDay: e.target.checked,
+                          })
+                        }
+                      >
+                        กิจกรรมทั้งวัน
+                      </Checkbox>
                     </div>
+                    {!currentEventForm.allDay && (
+                      <>
+                        <div className="w-full flex gap-x-2">
+                          <div className="w-full">
+                            <p className="mb-2">เวลาเริ่มต้น</p>
+                            <TimeInput
+                              defaultValue={
+                                new Time(
+                                  eventTimeForm.start.hour,
+                                  eventTimeForm.start.minute
+                                )
+                              }
+                              value={
+                                new Time(
+                                  eventTimeForm.start.hour,
+                                  eventTimeForm.start.minute
+                                )
+                              }
+                              label={null}
+                              aria-label="เวลาเริ่มต้น"
+                              isRequired
+                              hourCycle={24}
+                              onChange={(e) => {
+                                if (e) {
+                                  setEventTimeForm({
+                                    ...eventTimeForm,
+                                    start: { hour: e.hour, minute: e.minute },
+                                  });
+                                }
+                              }}
+                              classNames={{
+                                ...inputClassNames,
+                              }}
+                            />
+                          </div>
+                          <div className="w-full">
+                            <p className="mb-2">เวลาสิ้นสุด</p>
+                            <TimeInput
+                              defaultValue={
+                                new Time(
+                                  eventTimeForm.end.hour,
+                                  eventTimeForm.end.minute
+                                )
+                              }
+                              value={
+                                new Time(
+                                  eventTimeForm.end.hour,
+                                  eventTimeForm.end.minute
+                                )
+                              }
+                              label={null}
+                              aria-label="เวลาสิ้นสุด"
+                              isRequired
+                              hourCycle={24}
+                              onChange={(e) => {
+                                if (e) {
+                                  setEventTimeForm({
+                                    ...eventTimeForm,
+                                    end: { hour: e.hour, minute: e.minute },
+                                  });
+                                }
+                              }}
+                              classNames={{
+                                ...inputClassNames,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </form>
                 </ModalBody>
                 <ModalFooter className="flex justify-end gap-x-6">
