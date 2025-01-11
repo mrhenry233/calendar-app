@@ -177,6 +177,12 @@ const Calendar = () => {
 
   const handleDeleteEvent = () => {
     if (selectedEvent) {
+      const removeSelectedEvent = allEvents.filter(
+        (event) => event.id !== selectedEvent.event.id
+      );
+
+      setAllEvents(removeSelectedEvent);
+
       selectedEvent.event.remove();
       onClose();
     }
