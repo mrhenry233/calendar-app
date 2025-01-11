@@ -104,8 +104,6 @@ const Calendar = () => {
     if (selectedDate) {
       const { start, end } = selectedDate;
 
-      console.log(selectedDate);
-
       const isoStringStart = dayjs(start)
         .hour(eventTimeForm.start.hour)
         .minute(eventTimeForm.start.minute)
@@ -117,6 +115,7 @@ const Calendar = () => {
         .minute(eventTimeForm.end.minute)
         .second(0)
         .millisecond(0)
+        .subtract(1, "day") // add this so the date on full calendar wont add one more day for event
         .toISOString();
 
       const _event: Event = {
@@ -132,7 +131,7 @@ const Calendar = () => {
           updated_at: currentEventForm.extendedProps.updated_at,
         },
       };
-      console.log(_event);
+
       setAllEvents((prev) => [...prev, _event]);
       onClose();
     }
@@ -217,12 +216,12 @@ const Calendar = () => {
                 .map((event) => (
                   <div key={event.id} className="w-full flex flex-col mb-6">
                     <p className="font-light text-small text-gray-600">
-                      {dayjs(event.start).format("dddd D, MMM")}
+                      {dayjs(event.start).format("dddd D, MMMM")}
                     </p>
                     <p className="font-light text-xs text-gray-600">
-                      {dayjs(event.start).format("hh:mm")}
+                      {dayjs(event.start).format("hh:mm")} น.
                     </p>
-                    <div className="">
+                    <div className="mt-1">
                       <p className="text-lg font-semibold">{event.title}</p>
                       <p>{event.extendedProps.content}</p>
                     </div>
