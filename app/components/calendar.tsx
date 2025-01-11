@@ -12,12 +12,13 @@ import {
   EventDropArg,
 } from "@fullcalendar/core/index.js";
 import {
+  Button,
   Checkbox,
+  Form,
   Input,
   Modal,
   ModalBody,
   ModalContent,
-  ModalFooter,
   ModalHeader,
   Textarea,
   TimeInput,
@@ -65,6 +66,24 @@ const Calendar = () => {
     if (!isOpen) setCurrentEventForm(BlankEvent);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (eventTimeForm.end.hour < eventTimeForm.start.hour) {
+      setEventTimeForm({
+        ...eventTimeForm,
+        end: { ...eventTimeForm.end, hour: eventTimeForm.start.hour },
+      });
+    } else if (
+      eventTimeForm.end.hour === eventTimeForm.start.hour &&
+      eventTimeForm.end.minute <= eventTimeForm.start.minute
+    ) {
+      setEventTimeForm({
+        ...eventTimeForm,
+        end: { ...eventTimeForm.end, minute: eventTimeForm.start.minute + 1 },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventTimeForm.start]);
+
   const handleClickDate = (date: DateSelectArg) => {
     // doing double click things
     if (clickTimeout) {
@@ -100,7 +119,10 @@ const Calendar = () => {
     });
   };
 
-  const handleAddEvent = () => {
+  const handleAddEvent = (e: React.FormEvent<HTMLFormElement>) => {
+    // Prevent default browser page refresh.
+    e.preventDefault();
+
     if (selectedDate) {
       const { start, end } = selectedDate;
 
@@ -137,43 +159,44 @@ const Calendar = () => {
     }
   };
 
-  const handleEditEvent = () => {
-    if (selectedEvent) {
-      setAllEvents(
-        allEvents.map((event) => {
-          if (event.id === currentEventForm.id) {
-            const isoStringStart = dayjs(selectedEvent.event.start)
-              .hour(eventTimeForm.start.hour)
-              .minute(eventTimeForm.start.minute)
-              .second(0)
-              .millisecond(0)
-              .toISOString();
-            const isoStringEnd = dayjs(selectedEvent.event.end)
-              .hour(eventTimeForm.end.hour)
-              .minute(eventTimeForm.end.minute)
-              .second(0)
-              .millisecond(0)
-              .date(dayjs(isoStringStart).date()) // add this so the date on full calendar wont add one more day for event
-              .toISOString();
+  // FIXME: might not need this since we will send data to back-end
+  // const handleEditEvent = () => {
+  //   if (selectedEvent) {
+  //     setAllEvents(
+  //       allEvents.map((event) => {
+  //         if (event.id === currentEventForm.id) {
+  //           const isoStringStart = dayjs(selectedEvent.event.start)
+  //             .hour(eventTimeForm.start.hour)
+  //             .minute(eventTimeForm.start.minute)
+  //             .second(0)
+  //             .millisecond(0)
+  //             .toISOString();
+  //           const isoStringEnd = dayjs(selectedEvent.event.end)
+  //             .hour(eventTimeForm.end.hour)
+  //             .minute(eventTimeForm.end.minute)
+  //             .second(0)
+  //             .millisecond(0)
+  //             .date(dayjs(isoStringStart).date()) // add this so the date on full calendar wont add one more day for event
+  //             .toISOString();
 
-            console.log("start => ", isoStringStart);
-            console.log("end => ", isoStringEnd);
+  //           console.log("start => ", isoStringStart);
+  //           console.log("end => ", isoStringEnd);
 
-            const newData: Event = {
-              ...currentEventForm,
-              start: isoStringStart,
-              end: isoStringEnd,
-            };
+  //           const newData: Event = {
+  //             ...currentEventForm,
+  //             start: isoStringStart,
+  //             end: isoStringEnd,
+  //           };
 
-            return newData;
-          }
-          return event;
-        })
-      );
+  //           return newData;
+  //         }
+  //         return event;
+  //       })
+  //     );
 
-      onClose();
-    }
-  };
+  //     onClose();
+  //   }
+  // };
 
   const handleDeleteEvent = () => {
     if (selectedEvent) {
@@ -366,13 +389,16 @@ const Calendar = () => {
                   )}
                 </ModalHeader>
                 <ModalBody className="w-full">
-                  <form
+                  <Form
                     className="w-full flex flex-col gap-y-4"
                     onSubmit={handleAddEvent}
+                    validationBehavior="native"
                   >
                     <div className="w-full">
                       <p>ชื่อกิจกรรม</p>
                       <Input
+                        isRequired
+                        errorMessage="กรุณากรอกชื่อกิจกรรม"
                         value={currentEventForm.title}
                         onChange={(e) =>
                           setCurrentEventForm({
@@ -380,7 +406,7 @@ const Calendar = () => {
                             title: e.target.value,
                           })
                         }
-                        required
+                        label={null}
                         classNames={{
                           ...inputClassNames,
                         }}
@@ -478,7 +504,11 @@ const Calendar = () => {
                               isRequired
                               hourCycle={24}
                               onChange={(e) => {
-                                if (e) {
+                                if (
+                                  e &&
+                                  e.hour >= eventTimeForm.start.hour &&
+                                  e.minute > eventTimeForm.start.minute
+                                ) {
                                   setEventTimeForm({
                                     ...eventTimeForm,
                                     end: { hour: e.hour, minute: e.minute },
@@ -493,9 +523,31 @@ const Calendar = () => {
                         </div>
                       </>
                     )}
-                  </form>
+                    <div className="w-full flex justify-end gap-x-4 pb-4">
+                      <Button
+                        className="bg-blue-500 text-white p-3 mt-5 rounded-md min-w-[100px]"
+                        type="submit"
+                        isDisabled={currentEventForm.title.length === 0}
+                      >
+                        {currentEventForm.id
+                          ? "บันทึกการแก้ไข"
+                          : "เพิ่มกิจกรรม"}
+                      </Button>
+
+                      {currentEventForm.id && (
+                        <Button
+                          type="button"
+                          className="bg-white text-red-500 p-3 mt-5 rounded-md border border-red-500 min-w-[100px]"
+                          onPress={() => setIsShowDeleteConfirmation(true)}
+                        >
+                          ลบ
+                        </Button>
+                      )}
+                    </div>
+                  </Form>
                 </ModalBody>
-                <ModalFooter className="flex justify-end gap-x-6">
+                {/* FIXME: delete this later */}
+                {/* <ModalFooter className="flex justify-end gap-x-6">
                   <button
                     className="bg-blue-500 text-white p-3 mt-5 rounded-md min-w-[100px]"
                     disabled={
@@ -516,7 +568,7 @@ const Calendar = () => {
                       ลบ
                     </button>
                   )}
-                </ModalFooter>
+                </ModalFooter> */}
               </div>
             )}
           </ModalContent>
