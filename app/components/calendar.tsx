@@ -115,7 +115,7 @@ const Calendar = () => {
         .minute(eventTimeForm.end.minute)
         .second(0)
         .millisecond(0)
-        .subtract(1, "day") // add this so the date on full calendar wont add one more day for event
+        .date(dayjs(isoStringStart).date()) // add this so the date on full calendar wont add one more day for event
         .toISOString();
 
       const _event: Event = {
@@ -141,7 +141,32 @@ const Calendar = () => {
     if (selectedEvent) {
       setAllEvents(
         allEvents.map((event) => {
-          if (event.id === currentEventForm.id) return currentEventForm;
+          if (event.id === currentEventForm.id) {
+            const isoStringStart = dayjs(selectedEvent.event.start)
+              .hour(eventTimeForm.start.hour)
+              .minute(eventTimeForm.start.minute)
+              .second(0)
+              .millisecond(0)
+              .toISOString();
+            const isoStringEnd = dayjs(selectedEvent.event.end)
+              .hour(eventTimeForm.end.hour)
+              .minute(eventTimeForm.end.minute)
+              .second(0)
+              .millisecond(0)
+              .date(dayjs(isoStringStart).date()) // add this so the date on full calendar wont add one more day for event
+              .toISOString();
+
+            console.log("start => ", isoStringStart);
+            console.log("end => ", isoStringEnd);
+
+            const newData: Event = {
+              ...currentEventForm,
+              start: isoStringStart,
+              end: isoStringEnd,
+            };
+
+            return newData;
+          }
           return event;
         })
       );
