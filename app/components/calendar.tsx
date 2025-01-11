@@ -1,28 +1,31 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Time } from "@internationalized/date";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionGridPlugin from "@fullcalendar/interaction";
 import {
-  CalendarApi,
   DateSelectArg,
   EventClickArg,
   EventDropArg,
 } from "@fullcalendar/core/index.js";
 import {
+  Input,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Textarea,
+  TimeInput,
   useDisclosure,
 } from "@nextui-org/react";
-import { MockEvents } from "../common/mock-data";
 import { Event } from "../common/types";
 import DeleteConfirmation from "./modals/delete-confirmation";
 import dayjs from "dayjs";
+import { inputClassNames } from "../common/class-names";
 
 const BlankEvent: Event = {
   id: "",
@@ -42,7 +45,7 @@ const Calendar = () => {
   let calendarRef: FullCalendar | null = null;
   let clickTimeout: NodeJS.Timeout | null = null;
 
-  const [allEvents, setAllEvents] = useState<Event[]>(MockEvents);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [currentEventForm, setCurrentEventForm] = useState<Event>(BlankEvent);
   const [selectedDate, setSelectedDate] = useState<DateSelectArg | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg | null>(
@@ -94,9 +97,6 @@ const Calendar = () => {
 
   const handleAddEvent = () => {
     if (selectedDate) {
-      const calendarApi: CalendarApi = selectedDate.view.calendar;
-      calendarApi.unselect();
-      // create new event
       const _event: Event = {
         id: (allEvents.length + 1).toString(),
         title: currentEventForm.title,
@@ -110,22 +110,19 @@ const Calendar = () => {
           updated_at: currentEventForm.extendedProps.updated_at,
         },
       };
-      calendarApi.addEvent(_event);
+      setAllEvents((prev) => [...prev, _event]);
       onClose();
     }
   };
 
   const handleEditEvent = () => {
     if (selectedEvent) {
-      const calendarApi: CalendarApi = selectedEvent.view.calendar;
-      const eventId = calendarApi.getEventById(currentEventForm.id);
-      if (eventId) {
-        eventId.setProp("title", currentEventForm.title);
-        eventId.setExtendedProp(
-          "content",
-          currentEventForm.extendedProps.content
-        );
-      }
+      setAllEvents(
+        allEvents.map((event) => {
+          if (event.id === currentEventForm.id) return currentEventForm;
+          return event;
+        })
+      );
 
       onClose();
     }
@@ -143,14 +140,37 @@ const Calendar = () => {
       allEvents.map((event) => {
         if (event.id === arg.event.id) {
           const { start } = arg.event;
-          const newData = {
-            ...event,
-            start: dayjs(start).toISOString(),
-            end: event.allDay
-              ? dayjs(start).add(1, "day").toISOString()
-              : dayjs(event.end).add(1, "day").toISOString(),
-          };
-          return newData;
+
+          // compare diff days
+          const dateDiff = Math.abs(
+            dayjs(start).diff(dayjs(event.start), "day")
+          );
+
+          // cal end date
+          if (!event.allDay) {
+            if (dayjs(start).isBefore(dayjs(event.start))) {
+              const newData: Event = {
+                ...event,
+                start: dayjs(start).toISOString(),
+                end: dayjs(event.end).subtract(dateDiff, "day").toISOString(),
+              };
+              return newData;
+            } else if (dayjs(start).isAfter(dayjs(event.start))) {
+              const newData: Event = {
+                ...event,
+                start: dayjs(start).toISOString(),
+                end: dayjs(event.end).add(dateDiff, "day").toISOString(),
+              };
+              return newData;
+            } else return event;
+          } else {
+            const newData: Event = {
+              ...event,
+              start: dayjs(start).startOf("day").toISOString(),
+              end: dayjs(start).endOf("day").toISOString(),
+            };
+            return newData;
+          }
         }
 
         return event;
@@ -210,7 +230,7 @@ const Calendar = () => {
                 text: "วันนี้",
                 click: () => {
                   if (calendarRef) {
-                    calendarRef.getApi().today(); // กระโดดไปยังวันปัจจุบัน
+                    calendarRef.getApi().today();
                   }
                 },
               },
@@ -218,7 +238,7 @@ const Calendar = () => {
                 text: "เดือน",
                 click: () => {
                   if (calendarRef) {
-                    calendarRef.getApi().changeView("dayGridMonth"); // เปลี่ยนเป็นมุมมองเดือน
+                    calendarRef.getApi().changeView("dayGridMonth");
                   }
                 },
               },
@@ -226,7 +246,7 @@ const Calendar = () => {
                 text: "สัปดาห์",
                 click: () => {
                   if (calendarRef) {
-                    calendarRef.getApi().changeView("timeGridWeek"); // เปลี่ยนเป็นมุมมองเดือน
+                    calendarRef.getApi().changeView("timeGridWeek");
                   }
                 },
               },
@@ -234,7 +254,7 @@ const Calendar = () => {
                 text: "วัน",
                 click: () => {
                   if (calendarRef) {
-                    calendarRef.getApi().changeView("timeGridDay"); // เปลี่ยนเป็นมุมมองเดือน
+                    calendarRef.getApi().changeView("timeGridDay");
                   }
                 },
               },
@@ -262,22 +282,25 @@ const Calendar = () => {
 
       {/* event modal */}
       <>
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-          <ModalContent>
+        <Modal
+          classNames={{ wrapper: "w-[420px] m-auto" }}
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+        >
+          <ModalContent className="w-full">
             {() => (
-              <div>
-                <ModalHeader>
+              <div className="w-full">
+                <ModalHeader className="w-full">
                   {currentEventForm.id ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรม"}
                 </ModalHeader>
-                <ModalBody>
+                <ModalBody className="w-full">
                   <form
-                    className="flex flex-col gap-y-4"
+                    className="w-full flex flex-col gap-y-4"
                     onSubmit={handleAddEvent}
                   >
-                    <div>
-                      <p>ชื่อ Event</p>
-                      <input
-                        type="text"
+                    <div className="w-full">
+                      <p>ชื่อกิจกรรม</p>
+                      <Input
                         value={currentEventForm.title}
                         onChange={(e) =>
                           setCurrentEventForm({
@@ -286,14 +309,16 @@ const Calendar = () => {
                           })
                         }
                         required
-                        className="border border-gray-200 p-3 rounded-md text-base w-full mt-2"
+                        classNames={{
+                          ...inputClassNames,
+                        }}
                       />
                     </div>
-                    <div>
-                      <p>เนื้อหา Event</p>
-                      <input
-                        type="text"
+                    <div className="w-full">
+                      <p>รายละเอียด</p>
+                      <Textarea
                         value={currentEventForm.extendedProps.content}
+                        minRows={2}
                         onChange={(e) => {
                           setCurrentEventForm({
                             ...currentEventForm,
@@ -303,9 +328,39 @@ const Calendar = () => {
                             },
                           });
                         }}
-                        required
-                        className="border border-gray-200 p-3 rounded-md text-base w-full mt-2"
+                        required={false}
+                        classNames={{
+                          ...inputClassNames,
+                        }}
                       />
+                    </div>
+                    <div className="w-full flex gap-x-2">
+                      <div className="w-full">
+                        <p className="mb-2">เวลาเริ่มต้น</p>
+                        <TimeInput
+                          defaultValue={new Time(9, 0)}
+                          label={null}
+                          aria-label="เวลาเริ่มต้น"
+                          // className="custom-time-input"
+                          hourCycle={24}
+                          classNames={{
+                            ...inputClassNames,
+                          }}
+                        />
+                      </div>
+                      <div className="w-full">
+                        <p className="mb-2">เวลาสิ้นสุด</p>
+                        <TimeInput
+                          defaultValue={new Time(9, 0)}
+                          label={null}
+                          aria-label="เวลาสิ้นสุด"
+                          // className="custom-time-input"
+                          hourCycle={24}
+                          classNames={{
+                            ...inputClassNames,
+                          }}
+                        />
+                      </div>
                     </div>
                   </form>
                 </ModalBody>
