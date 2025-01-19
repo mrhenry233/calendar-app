@@ -1,4 +1,4 @@
-import { Sex } from "./enums";
+import { Role, Sex } from "./enums";
 
 export type ExtendedPropsAppointment = {
   pet: { id: string; name: string; specie: string; sex: Sex };
@@ -39,4 +39,11 @@ export type Event = {
 export type EventTimeForm = {
   start: { hour: number; minute: number };
   end: { hour: number; minute: number };
+};
+
+export type User = {
+  id: string;
+  username: string;
+  email: string;
+  role: Role;
 };

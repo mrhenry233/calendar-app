@@ -7,3 +7,9 @@ export enum Specie {
   CAT = "แมว",
   DOG = "หมา",
 }
+
+export enum Role {
+  USER = "user",
+  ADMIN = "admin",
+  MODERATOR = "moderator",
+}

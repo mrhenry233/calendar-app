@@ -7,10 +7,6 @@ import "dayjs/locale/th";
 
 dayjs.locale("th");
 
-export default function AppProviders({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppProviders({ children }: { children: React.ReactNode; }) {
   return <NextUIProvider>{children}</NextUIProvider>;
 }
